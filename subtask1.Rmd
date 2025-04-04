@@ -1,0 +1,25 @@
+---
+title: "Data Manipulation Task"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+```{r}
+library(readr)
+library(dplyr)
+```
+
+
+## Importing data
+
+```{r}
+bank_full <- read_delim("bank/bank-full.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
