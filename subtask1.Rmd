@@ -100,14 +100,14 @@ We may also calculate the summarizing statistics.
 job_summary <- bank_full %>%
   group_by(job) %>%
   summarise(
-    age_mean = mean(age, na.rm = TRUE),
+    age_mean = round(mean(age, na.rm = TRUE), 2),
     balance_mean = mean(balance, na.rm = TRUE),
     balance_median = median(balance, na.rm = TRUE),
     balance_sd = sd(balance, na.rm = TRUE),
     duration_median = median(duration, na.rm = TRUE),
     n = n()
   ) %>%
-  arrange(desc(n))
+  arrange(desc(n), desc(age_mean))
 
 print(job_summary)
 ```
@@ -127,7 +127,30 @@ print(subscriber_summary)
 
 The data shows us that the "average" client that chose to subscribe to a deposit is a 32 y.o. married management worker which was contacted via phone in May and the phone call lasted 261 seconds. These could be the key factors which influence the probability of subscription.
 
-In order to detect clients that have no loans and sufficient balance to make a bank term deposit (a. k. a. are "good' potential depositors), but have specifically chosen not to, we will create a new indicator column.
+Using the previous conclusion, we may create a mock variable that assigns a score of how likely each client is to subscribe to a deposit.
+
+```{r}
+find_engagement <- function(duration, balance, housing_loan, personal_loan, in_default) {
+  if(in_default != TRUE){
+    score <- duration + 10*(balance/1000) - housing_loan*10 - personal_loan*20
+    if (score < 0){
+      return(0)
+    }
+    else {
+      return(score)
+    }
+  }
+  else{
+    return(0)
+  }
+}
+
+bank_full <- bank_full %>% 
+  mutate(engagement_score = mapply(find_engagement, duration, balance, housing_loan, personal_loan, in_default))
+
+```
+
+In order to detect clients that have no loans and sufficient balance to make a bank term deposit (a. k. a. are "good" potential depositors), but have specifically chosen not to, we will create a new indicator column.
 
 ```{r}
 bank_full <- bank_full %>%
@@ -148,3 +171,5 @@ max_balance_job <- bank_full %>%
 
 print(max_balance_job)
 ```
+
+The client with the highest balance has a job in management.
