@@ -18,7 +18,7 @@ During the data manipulation task we noticed that the balance of contacted clien
 
 ```{r warning=FALSE}
 ggplot(bank_full, aes(x = job, y = balance, fill = job)) + 
-  geom_boxplot() +
+  geom_boxplot(outlier.size = 0.7) +
   stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black") + 
   labs(title = "Distribution of Client Account Balances Reveals High Variance",
        subtitle = "Balance Distribution by Job") +
@@ -27,6 +27,10 @@ ggplot(bank_full, aes(x = job, y = balance, fill = job)) +
   
 ```
 
-The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. For example, we can see that the median account balance of students is higher than those of administrative workers. One trend is clear - retirees have a higher average and median balance.
+The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous. Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
 
-Another angle that could reveal valuable information is balance distribution by age.
+One angle that could reveal more valuable information is client characteristics with regard to whether or not the client has subscribed to a bank deposit.
+
+```{r}
+
+```
