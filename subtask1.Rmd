@@ -9,6 +9,7 @@ date: "`r Sys.Date()`"
 ```{r message=FALSE, warning=FALSE}
 library(readr)
 library(dplyr)
+library(DescTools)
 ```
 
 ## Importing data
@@ -50,14 +51,15 @@ bank_full <- bank_full %>%
   rename(in_default = "default",
          housing_loan = "housing",
          personal_loan = "loan",
-         contact_type = "contact")
+         contact_type = "contact",
+         subscribed = "y")
 ```
 
 Data is now cleaned, we now may move to the next step.
 
 ## Manipulating data
 
-We select a small sample of the provided data with a pre-determined seed for repeatable results.
+We select a small random sample of the provided data with a pre-determined seed for repeatable results.
 
 ```{r}
 set.seed(167)
@@ -75,11 +77,11 @@ lowBalwPartner <- bank_full %>%
   filter(balance < 100 & marital %in% c("maried", "divorced"))
 ```
 
-Also, we'll choose another group of clients which have at least one loan with the bank and are at least of the mean age for the data set.
+Also, we'll choose another group of clients which have at least one loan with the bank and are at least of the median age for the data set.
 
 ```{r}
 withLoans <- bank_full %>% 
-  filter((housing_loan == TRUE | personal_loan == TRUE) & age >= mean(age, na.rm = TRUE))
+  filter((housing_loan == TRUE | personal_loan == TRUE) & age >= median(age, na.rm = TRUE))
 ```
 
 Next, we can drop columns that we will no longer need.
@@ -88,7 +90,7 @@ Next, we can drop columns that we will no longer need.
 bothFrames <- list(lowBalwPartner, withLoans)
 
 cleanedFrames <- lapply(bothFrames, function(df) {
-  df %>% select(-all_of(c("previous", "poutcome")))
+  df %>% select(-all_of(c("campaign", "pdays")))
 })
 ```
 
@@ -111,6 +113,19 @@ print(job_summary)
 ```
 
 The summarized statistics allows us to make a few insights. First, the contacted clients with a job in management had the highest average balance. Second, high standard deviation tells us that client balance varies quite a lot from one client to another. Third, most clients over all had a balance in the mid-500s. Fourth, most of the contacted clients are blue-collar workers. That is quite normal as blue-collar workers usually make up the largest percentage of the population.
+
+We should also inspect the clients that chose to subscribe to a deposit and what characteristics they show.
+
+```{r}
+subscriber_summary <- bank_full %>%
+  filter(subscribed == TRUE) %>%
+  select(-c(in_default)) %>%
+  summarise(across(everything(), ~DescTools::Mode(.x), .names = "mode_{.col}"))
+
+print(subscriber_summary)
+```
+The data shows us that the "average" client that chose to subscribe to a deposit is a 32 y.o. married management worker which was contacted via phone in May and the phone call lasted 261 seconds. These could be the key factors which influence the probability of subscription.
+
 
 In order to detect clients that have no loans and sufficient balance to make a bank term deposit, but have specifficaly chosen not to, we will create a new indicator column.
 
