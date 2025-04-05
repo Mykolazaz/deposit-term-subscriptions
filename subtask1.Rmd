@@ -4,10 +4,6 @@ output: pdf_document
 date: "`r Sys.Date()`"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Packages
 
 ```{r message=FALSE, warning=FALSE}
@@ -57,7 +53,6 @@ bank_full <- bank_full %>%
          contact_type = "contact")
 ```
 
-
 ## Manipulating data
 
 We select a small sample of the provided data with a pre-determined seed for repeatable results.
@@ -95,3 +90,44 @@ cleanedFrames <- lapply(bothFrames, function(df) {
 })
 ```
 
+We may also look at the summarizing statistics.
+
+```{r}
+job_summary <- bank_full %>%
+  group_by(job) %>%
+  summarise(
+    age_mean = mean(age, na.rm = TRUE),
+    balance_mean = mean(balance, na.rm = TRUE),
+    balance_median = median(balance, na.rm = TRUE),
+    balance_sd = sd(balance, na.rm = TRUE),
+    duration_median = median(duration, na.rm = TRUE),
+    n = n()
+  ) %>%
+  arrange(desc(n))
+
+print(job_summary)
+```
+
+The summarized statistics allows us to make a few insights. First, the contacted clients with a job in management had the highest average balance. Second, high standard deviation tells us that client balance varies quite a lot from one client to another. Third, most clients over all had a balance in the mid-500s. Fourth, most of the contacted clients are blue-collar workers. That is quite normal as blue-collar workers usually make up the largest percentage of the population.
+
+In order to detect clients that have no loans and sufficient balance to make a bank term deposit, but have specifficaly chosen not to, we will create a new indicator column.
+
+```{r}
+bank_full <- bank_full %>%
+  mutate(potential_client = balance > 1000 & campaign > 0 & previous == 0 &
+                            !in_default & !housing_loan & !personal_loan)
+summary(bank_full$potential_client)
+
+```
+
+We can see that to 5227 potential clients the marketing campaign hasn't been effective.
+
+We can also take a look at the contacted clients with the highest balance by job type.
+
+```{r}
+max_balance_job <- bank_full %>% 
+  group_by(job) %>% 
+  summarise(max_balance = max(balance))
+
+print(max_balance_job)
+```
