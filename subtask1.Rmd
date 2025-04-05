@@ -28,13 +28,13 @@ bank_full <- read_delim("bankData/bank-full.csv",
 head(bank_full)
 ```
 
-A first look at the data shows us that many of the provided columns have an incorrect data type. For example, default and marital status are set as character data types while they should be factors.
+A first look at the data shows us that many of the provided columns have an incorrect data type. For example, default and marital status are set as character data types when they should be factors.
 
 ```{r}
 str(bank_full)
 ```
 
-A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". That also should be changed.
+A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". They should be changed to NA.
 
 ```{r}
 bank_full[bank_full == "unknown"] <- NA
@@ -42,7 +42,18 @@ bank_full[bank_full == "unknown"] <- NA
 bank_full <- bank_full %>%
   mutate(job = if_else(job == "admin.", "admin", job)) %>% 
   mutate(across(c(marital, job, education, contact), as.factor)) %>% 
-  mutate(across(c(default, housing, loan), ~ .x == "yes"))
+  mutate(across(c(default, housing, loan, y), ~ .x == "yes"))
 
 str(bank_full)
+```
+
+Now the data is cleaned and we may begin working with it.
+
+## Manipulating data
+
+We select a small sample of the provided data with a pre-determined seed for repeatable results.
+
+```{r}
+set.seed(167)
+smallBank <- sample(bank_full, 400, replace = FALSE)
 ```
