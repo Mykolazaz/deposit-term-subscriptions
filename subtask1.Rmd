@@ -90,7 +90,7 @@ Next, we can drop columns that we will no longer need.
 bothFrames <- list(lowBalwPartner, withLoans)
 
 cleanedFrames <- lapply(bothFrames, function(df) {
-  df %>% select(-all_of(c("campaign", "pdays")))
+  df %>% select(-c("campaign", "pdays"))
 })
 ```
 
@@ -112,7 +112,7 @@ job_summary <- bank_full %>%
 print(job_summary)
 ```
 
-The summarized statistics allows us to make a few insights. First, the contacted clients with a job in management had the highest average balance. Second, high standard deviation tells us that client balance varies quite a lot from one client to another. Third, most clients over all had a balance in the mid-500s. Fourth, most of the contacted clients are blue-collar workers. That is quite normal as blue-collar workers usually make up the largest percentage of the population.
+The summarized statistics allows us to make a few insights about the clients that were contacted. First, the clients with a job in management had the highest average balance. Second, high standard deviation tells us that client balance varies quite a lot from one client to another. Third, most clients over all had a balance in the mid-500s. Fourth, most of the contacted clients were blue-collar workers. That is quite normal as blue-collar workers usually make up the largest percentage of the population.
 
 We should also inspect the clients that chose to subscribe to a deposit and what characteristics they show.
 
@@ -124,10 +124,10 @@ subscriber_summary <- bank_full %>%
 
 print(subscriber_summary)
 ```
+
 The data shows us that the "average" client that chose to subscribe to a deposit is a 32 y.o. married management worker which was contacted via phone in May and the phone call lasted 261 seconds. These could be the key factors which influence the probability of subscription.
 
-
-In order to detect clients that have no loans and sufficient balance to make a bank term deposit, but have specifficaly chosen not to, we will create a new indicator column.
+In order to detect clients that have no loans and sufficient balance to make a bank term deposit (a. k. a. are "good' potential depositors), but have specifically chosen not to, we will create a new indicator column.
 
 ```{r}
 bank_full <- bank_full %>%
