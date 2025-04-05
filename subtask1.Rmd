@@ -55,5 +55,25 @@ We select a small sample of the provided data with a pre-determined seed for rep
 
 ```{r}
 set.seed(167)
-smallBank <- sample(bank_full, 400, replace = FALSE)
+smallBank <- sample_n(bank_full, 400, replace = FALSE)
 ```
+
+```{r}
+summary(bank_full[, c("age", "job", "marital", "education", "default", "loan")])
+```
+
+Let's take a closer look at the clients which have a dangerously low balance and have or have had a partner at a point in their life. Due to low numbers in the total population, let's search for them in the full data set.
+
+```{r}
+lowBalwPartner <- bank_full %>% 
+  filter(balance < 100 & marital %in% c("maried", "divorced"))
+```
+
+Also, we'll choose another group of clients which have at least one loan with the bank.
+
+```{r}
+withLoans <- bank_full %>% 
+  filter(housing == TRUE | loan == TRUE)
+```
+
+Next, we can drop columns that we will no longer need.
