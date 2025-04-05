@@ -30,20 +30,20 @@ A first look at the data shows us that many of the provided columns have an inco
 str(bank_full)
 ```
 
-A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". They should be changed to NA.
+A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". We have to decide whether to keep them as "unknown" or convert them to NA. As the data given to a logistic regression model cannot have missing entries, "unknown" values will be kept.
 
 ```{r}
-bank_full[bank_full == "unknown"] <- NA
-
 bank_full <- bank_full %>%
   mutate(job = if_else(job == "admin.", "admin", job)) %>% 
-  mutate(across(c(marital, job, education, contact), as.factor)) %>% 
+  mutate(across(c(marital, job, education, contact, day, month, poutcome), as.factor)) %>% 
   mutate(across(c(default, housing, loan, y), ~ .x == "yes"))
+
+summary(bank_full)
 
 str(bank_full)
 ```
 
-Since some columns have names that may be difficult to interpret without looking at the metadata first, we should rename them.
+Lastly, since some columns have names that may be difficult to interpret without looking at the metadata first, we should rename them.
 
 ```{r}
 bank_full <- bank_full %>% 
@@ -52,6 +52,8 @@ bank_full <- bank_full %>%
          personal_loan = "loan",
          contact_type = "contact")
 ```
+
+Data is now cleaned, we now may move to the next step.
 
 ## Manipulating data
 
@@ -73,11 +75,11 @@ lowBalwPartner <- bank_full %>%
   filter(balance < 100 & marital %in% c("maried", "divorced"))
 ```
 
-Also, we'll choose another group of clients which have at least one loan with the bank and are at least of the age of 24.
+Also, we'll choose another group of clients which have at least one loan with the bank and are at least of the mean age for the data set.
 
 ```{r}
 withLoans <- bank_full %>% 
-  filter((housing_loan == TRUE | personal_loan == TRUE) & age >= 24)
+  filter((housing_loan == TRUE | personal_loan == TRUE) & age >= mean(age, na.rm = TRUE))
 ```
 
 Next, we can drop columns that we will no longer need.
@@ -90,7 +92,7 @@ cleanedFrames <- lapply(bothFrames, function(df) {
 })
 ```
 
-We may also look at the summarizing statistics.
+We may also calculate the summarizing statistics.
 
 ```{r}
 job_summary <- bank_full %>%
