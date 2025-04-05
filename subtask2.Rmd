@@ -1,0 +1,32 @@
+---
+title: "Data Visualization Task"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+*Data from subtask1.rmd (Data Manipulation Task) must be loaded into the environment.*
+
+## Packages
+
+```{r}
+library(ggplot2)
+```
+
+## Visualizing the data
+
+During the data manipulation task we noticed that the balance of contacted clients, when grouped by job, varies a lot. Let's plot the distribution of the balance to make further conclusions.
+
+```{r warning=FALSE}
+ggplot(bank_full, aes(x = job, y = balance, fill = job)) + 
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black") + 
+  labs(title = "Distribution of Client Account Balances Reveals High Variance",
+       subtitle = "Balance Distribution by Job") +
+  ylim(-1000, 5000) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+```
+
+The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. For example, we can see that the median account balance of students is higher than those of administrative workers. One trend is clear - retirees have a higher average and median balance.
+
+Another angle that could reveal valuable information is balance distribution by age.
