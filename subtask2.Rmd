@@ -42,7 +42,7 @@ p2 <- ggplot(filter(bank_long, variable == "balance"),
 p3 <- ggplot(filter(bank_long, variable == "duration"),
                      aes(x = value, fill = subscribed)) +
   geom_density(alpha = 0.5) +
-  xlim(0, 1500) +
+  xlim(0, 1600) +
   labs(title = "Call Duration", x = "Duration", y = "")
 
 
@@ -78,11 +78,11 @@ ggplot(bank_full_loged, aes(x = job, y = log_balance, fill = job)) +
 
 The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
 
-One angle that could reveal more valuable information is additional client characteristics with regard to whether or not the client has subscribed to a bank deposit.
+One angle that could reveal more valuable information is additional (categorical) client characteristics with regard to whether or not the client has subscribed to a bank deposit.
 
 ```{r message=FALSE, warning=FALSE}
 cat_vars <- c("job", "marital", "education", "in_default", "housing_loan", 
-              "personal_loan", "contact_type", "month", "poutcome")
+              "personal_loan", "day", "month", "poutcome")
 
 create_bar_plot <- function(data, var_name) {
   freq_table <- data %>%
@@ -111,3 +111,4 @@ plot_list <- lapply(cat_vars, function(var) create_bar_plot(bank_full, var))
 bar_plot_matrix <- grid.arrange(grobs = plot_list, ncol = 3)
 ```
 
+The bar chart matrix reveals a lot of useful information. Firstly, retired workers and student are most likely to subscribe to a deposit. Secondly, there are pronounced differences between the types of marital status of the reached clients. Thirdly, it is more probable that clients with a tertiary education will subscribe. Fourthly, clients with no financial burdens are more likely to subscribe. And lastly, March, September, October and December were the best months to contact the clients. Higher success could also be achieved when contacting the clients on the 1st, 10th, 22nd and 30th. Therefore, these insights should be tested when modelling.
