@@ -10,27 +10,72 @@ date: "`r Sys.Date()`"
 
 ```{r}
 library(ggplot2)
+library(GGally)
+library(tidyr)
+library(patchwork)
 ```
 
 ## Visualizing the data
 
+Let's look at the distribution of available continuous variables with regard to whether the client decided to subscribe.
+
+```{r message=FALSE, warning=FALSE}
+vars_for_plot <- bank_full %>%
+  select(age, balance, duration, campaign, pdays, previous, subscribed)
+
+bank_long <- vars_for_plot %>%
+  pivot_longer(cols = -subscribed, names_to = "variable", values_to = "value")
+
+p1 <- ggplot(filter(bank_long, variable == "age"),
+                aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(18, 99) +
+  labs(title = "Age", x = "Age", y = "")
+
+p2 <- ggplot(filter(bank_long, variable == "balance"),
+                    aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(-1000, 5500) +
+  labs(title = "Balance", x = "Balance", y = "")
+
+p3 <- ggplot(filter(bank_long, variable == "duration"),
+                     aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(0, 1500) +
+  labs(title = "Call Duration", x = "Duration", y = "")
+
+
+final_plot <- (p1 | p2 | p3) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+final_plot
+```
+
+The density plots show us that both age and balance are unlikely meaningful indicators of deposit subscription. On the other hand, call duration seems to tell a different story. Clients that, in the end, decided not to subscribe had shorter conversations with the representative of the bank showing their disinterest early on.
+
 During the data manipulation task we noticed that the balance of contacted clients, when grouped by job, varies a lot. Let's plot the distribution of the balance to make further conclusions.
 
 ```{r warning=FALSE}
-ggplot(bank_full, aes(x = job, y = balance, fill = job)) + 
-  geom_boxplot(outlier.size = 0.7) +
-  stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black") + 
+bank_full <- bank_full %>% 
+  mutate(log_balance = log(balance))
+
+bank_full$log_balance[is.nan(bank_full$log_balance)] <- NA
+bank_full$log_balance[bank_full$log_balance == -Inf] <- NA
+
+bank_full_loged <- bank_full %>% 
+  filter(!is.na(log_balance))
+
+ggplot(bank_full_loged, aes(x = job, y = log_balance, fill = job)) + 
+  geom_boxplot(outlier.size = 0.7, na.rm = TRUE) +
+  stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black", na.rm = TRUE) + 
   labs(title = "Distribution of Client Account Balances Reveals High Variance",
-       subtitle = "Balance Distribution by Job") +
-  ylim(-1000, 5000) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+       subtitle = "Log-transformed Balance Distribution by Job") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
   
 ```
 
-The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous. Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
+The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
 
 One angle that could reveal more valuable information is client characteristics with regard to whether or not the client has subscribed to a bank deposit.
 
-```{r}
-
-```
