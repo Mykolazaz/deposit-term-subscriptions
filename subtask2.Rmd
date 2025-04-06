@@ -11,6 +11,7 @@ date: "`r Sys.Date()`"
 ```{r}
 library(ggplot2)
 library(GGally)
+library(gridExtra)
 library(tidyr)
 library(patchwork)
 ```
@@ -52,7 +53,7 @@ final_plot <- (p1 | p2 | p3) +
 final_plot
 ```
 
-The density plots show us that both age and balance are unlikely meaningful indicators of deposit subscription. On the other hand, call duration seems to tell a different story. Clients that, in the end, decided not to subscribe had shorter conversations with the representative of the bank showing their disinterest early on.
+The density plots show us that both age and balance are unlikely meaningful indicators of deposit subscription with the exception of age 60+. On the other hand, call duration seems to tell a different story. Clients that, in the end, decided not to subscribe had shorter conversations with the representative of the bank showing their disinterest early on.
 
 During the data manipulation task we noticed that the balance of contacted clients, when grouped by job, varies a lot. Let's plot the distribution of the balance to make further conclusions.
 
@@ -77,5 +78,36 @@ ggplot(bank_full_loged, aes(x = job, y = log_balance, fill = job)) +
 
 The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
 
-One angle that could reveal more valuable information is client characteristics with regard to whether or not the client has subscribed to a bank deposit.
+One angle that could reveal more valuable information is additional client characteristics with regard to whether or not the client has subscribed to a bank deposit.
+
+```{r message=FALSE, warning=FALSE}
+cat_vars <- c("job", "marital", "education", "in_default", "housing_loan", 
+              "personal_loan", "contact_type", "month", "poutcome")
+
+create_bar_plot <- function(data, var_name) {
+  freq_table <- data %>%
+    group_by(!!sym(var_name), subscribed) %>%
+    summarise(count = n(), .groups = "drop") %>%
+    group_by(!!sym(var_name)) %>%
+    mutate(prop = count / sum(count))
+  
+  p <- ggplot(freq_table, aes(x = !!sym(var_name), y = prop, fill = subscribed)) +
+    geom_bar(stat = "identity", position = "fill") +
+    scale_fill_manual(values = c("TRUE" = "#4CAF50", "FALSE" = "#F44336")) +
+    labs(title = "",
+         x = var_name,
+         y = "",
+         fill = "Subscribed") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(size = 10),
+          legend.position = "none")
+  
+  return(p)
+}
+
+plot_list <- lapply(cat_vars, function(var) create_bar_plot(bank_full, var))
+
+bar_plot_matrix <- grid.arrange(grobs = plot_list, ncol = 3)
+```
 
