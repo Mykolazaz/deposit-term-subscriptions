@@ -67,11 +67,11 @@ ggplot(bank_full_loged, aes(x = job, y = trans_balance, fill = job)) +
   coord_flip() + 
   stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black", na.rm = TRUE) + 
   labs(title = "Distribution of Client Account Balances Reveals High Variance",
-       subtitle = "Log-transformed Balance Distribution by Job") +
+       subtitle = "Tranformed Balance Distribution by Job") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 ```
 
-The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
+The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply Yeo-Johnson transformation to achieve more normal values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
 
 One angle that could reveal more valuable information is additional (categorical) client characteristics with regard to whether or not the client has subscribed to a bank deposit.
 
@@ -109,3 +109,26 @@ The bar chart matrix reveals a lot of useful information. Firstly, retired worke
 
 We saw that call duration may be factor in the deposit subscription rate. Let's at the relationship it has with other continuous variables.
 
+```{r message=FALSE, warning=FALSE}
+p1 <- ggplot(bank_full, aes(x = log(duration), y = log(age))) +
+  geom_point(alpha = 0.5) + 
+  geom_smooth() +
+  labs(title = "log(age) vs log(duration)") +
+  theme_minimal()
+
+p2 <- ggplot(bank_full, aes(x = log(duration), y = balance)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  labs(title = "balance vs log(duration)") +
+  theme_minimal()
+
+p1 + p2
+```
+
+```{r}
+cor(bank_full$duration, bank_full$balance)
+
+cor(bank_full$duration, bank_full$age)
+```
+
+The graphs along with Pearson's correlation coefficient indicate that no correlation between call duration and balance/age exists.
