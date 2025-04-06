@@ -160,7 +160,7 @@ bank_full <- bank_full %>%
 summary(bank_full$potential_client)
 ```
 
-We can see that to 5227 potential clients the marketing campaign hasn't been effective.
+We can see that to 5227 "potential" clients the marketing campaign hasn't been effective.
 
 We can also take a look at the contacted clients with the highest balance by job type.
 
