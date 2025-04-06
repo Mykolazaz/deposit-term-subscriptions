@@ -14,6 +14,7 @@ library(GGally)
 library(gridExtra)
 library(tidyr)
 library(patchwork)
+library(bestNormalize)
 ```
 
 ## Visualizing the data
@@ -58,25 +59,19 @@ The density plots show us that both age and balance are unlikely meaningful indi
 During the data manipulation task we noticed that the balance of contacted clients, when grouped by job, varies a lot. Let's plot the distribution of the balance to make further conclusions.
 
 ```{r warning=FALSE}
-bank_full <- bank_full %>% 
-  mutate(log_balance = log(balance))
+yj <- yeojohnson(bank_full$balance)
+bank_full$trans_balance <- predict(yj)
 
-bank_full$log_balance[is.nan(bank_full$log_balance)] <- NA
-bank_full$log_balance[bank_full$log_balance == -Inf] <- NA
-
-bank_full_loged <- bank_full %>% 
-  filter(!is.na(log_balance))
-
-ggplot(bank_full_loged, aes(x = job, y = log_balance, fill = job)) + 
+ggplot(bank_full_loged, aes(x = job, y = trans_balance, fill = job)) + 
   geom_boxplot(outlier.size = 0.7, na.rm = TRUE) +
+  coord_flip() + 
   stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black", na.rm = TRUE) + 
   labs(title = "Distribution of Client Account Balances Reveals High Variance",
        subtitle = "Log-transformed Balance Distribution by Job") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-  
 ```
 
-The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of administrative workers. Another trend is clear - retirees have a higher average and median balance.
+The graph allows us to conclude that the balance of the client accounts is likely dependent more factors than simply their job as there are many outliers in the data. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply log-transformations for normalized values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
 
 One angle that could reveal more valuable information is additional (categorical) client characteristics with regard to whether or not the client has subscribed to a bank deposit.
 
@@ -94,8 +89,7 @@ create_bar_plot <- function(data, var_name) {
   p <- ggplot(freq_table, aes(x = !!sym(var_name), y = prop, fill = subscribed)) +
     geom_bar(stat = "identity", position = "fill") +
     scale_fill_manual(values = c("TRUE" = "#4CAF50", "FALSE" = "#F44336")) +
-    labs(title = "",
-         x = var_name,
+    labs(x = var_name,
          y = "",
          fill = "Subscribed") +
     theme_minimal() +
@@ -112,3 +106,6 @@ bar_plot_matrix <- grid.arrange(grobs = plot_list, ncol = 3)
 ```
 
 The bar chart matrix reveals a lot of useful information. Firstly, retired workers and student are most likely to subscribe to a deposit. Secondly, there are pronounced differences between the types of marital status of the reached clients. Thirdly, it is more probable that clients with a tertiary education will subscribe. Fourthly, clients with no financial burdens are more likely to subscribe. And lastly, March, September, October and December were the best months to contact the clients. Higher success could also be achieved when contacting the clients on the 1st, 10th, 22nd and 30th. Therefore, these insights should be tested when modelling.
+
+We saw that call duration may be factor in the deposit subscription rate. Let's at the relationship it has with other continuous variables.
+

@@ -158,7 +158,6 @@ bank_full <- bank_full %>%
   mutate(potential_client = balance > 1000 & campaign > 0 & previous == 0 &
                             !in_default & !housing_loan & !personal_loan)
 summary(bank_full$potential_client)
-
 ```
 
 We can see that to 5227 potential clients the marketing campaign hasn't been effective.
