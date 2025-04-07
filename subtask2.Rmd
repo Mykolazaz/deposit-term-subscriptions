@@ -34,9 +34,6 @@ There are total of 12 job types along with the unknown type.
 
 It is also probable that we will see a lot of outliers in balance and duration since the maximum values are distinctly larger than the means.
 
-
-
-
 ```{r message=FALSE, warning=FALSE}
 ggplot(bank_full, aes(x = age)) +
   geom_histogram(aes(y = ..density..)) +
@@ -45,8 +42,8 @@ ggplot(bank_full, aes(x = age)) +
        x = "Age",
        y = "Density")
 ```
-With the age histogram overlaid with a normal curve we can see that our data is slightly left-skewed. Since all the values are within the range 18-95, no abnormalities can be found.
 
+With the age histogram overlaid with a normal curve we can see that our data is slightly left-skewed. Since all the values are within the range 18-95, no abnormalities can be found.
 
 ```{r message=FALSE, warning=FALSE}
 h_balance <- ggplot(bank_full, aes(x = balance)) +
