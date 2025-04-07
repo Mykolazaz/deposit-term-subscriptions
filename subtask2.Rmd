@@ -17,6 +17,55 @@ library(patchwork)
 library(bestNormalize)
 ```
 
+## Exploring the data
+
+Before we can make complex visualizations for deeper insights, we first must utilize more basic ways to understand the data. Let's go through the variables in the data set and understand how they're distributed or what qualities they exhibit.
+
+```{r}
+summary(bank_full)
+```
+
+What conclusions can we make looking at the summary table? Age seems to be a normal variable without any abnormalities.
+
+```{r}
+summary(bank_full$job)
+```
+There are total of 12 job types along with the unknown type.
+
+It is also probable that we will see a lot of outliers in balance and duration since the maximum values are distinctly larger than the means.
+
+
+
+
+```{r message=FALSE, warning=FALSE}
+ggplot(bank_full, aes(x = age)) +
+  geom_histogram(aes(y = ..density..)) +
+  stat_function(fun = dnorm, args = list(mean = mean(bank_full$age), sd = sd(bank_full$age)), color = "red", linewidth = 1.2) +
+  labs(title = "Age Distribution with Normal Curve",
+       x = "Age",
+       y = "Density")
+```
+With the age histogram overlaid with a normal curve we can see that our data is slightly left-skewed. Since all the values are within the range 18-95, no abnormalities can be found.
+
+
+```{r message=FALSE, warning=FALSE}
+h_balance <- ggplot(bank_full, aes(x = balance)) +
+  geom_histogram() +
+  labs(title = "Balance Distribution",
+       x = "Balance",
+       y = "Count")
+
+h_duration <- ggplot(bank_full, aes(x = duration)) +
+  geom_histogram() +
+  labs(title = "Call Duration Distribution",
+       x = "Duration",
+       y = "Count")
+
+h_balance + h_duration
+```
+
+On the contrary, both balance and duration suggest a more of an exponential distribution.
+
 ## Visualizing the data
 
 Let's look at the distribution of available continuous variables with regard to whether the client decided to subscribe.
@@ -59,22 +108,22 @@ The density plots show us that both age and balance are unlikely meaningful indi
 During the data manipulation task we noticed that the balance of contacted clients, when grouped by job, varies a lot. Let's plot the distribution of the balance to make further conclusions.
 
 ```{r}
-mean(bank_full$balance, na.rm = TRUE)
-sd(bank_full$balance)
+paste0("Balance Mean: ", mean(bank_full$balance, na.rm = TRUE))
+paste0("Balance Standart Deviation: ", sd(bank_full$balance))
 
 outliers <- boxplot.stats(bank_full$balance)$out
 outlierNum <- length(outliers)
-round(outlierNum/(length(bank_full$balance)) * 100, 2)
+paste0("Outlier Percentage: ", round(outlierNum/(length(bank_full$balance)) * 100, 2))
 
 ```
 
-Since the balance variance is relatively high and around 10% of the entries can be marked as outliers, we'll normalize the balance variable using the Yeo-Johnson transformation (similar to Box-Cox but without the non-negative value restriction).
+Since the balance variance is relatively high and around 10% of the entries can be marked as outliers, we'll normalize the balance variable using the Order-Norm transformation (maps each data point to a percentile in a normal distribution based on the percentile value in the original distribution).
 
 ```{r warning=FALSE}
-yj <- yeojohnson(bank_full$balance)
-bank_full$trans_balance <- predict(yj)
+on <- orderNorm(bank_full$balance)
+bank_full$trans_balance <- predict(on)
 
-ggplot(bank_full_loged, aes(x = job, y = trans_balance, fill = job)) + 
+ggplot(bank_full, aes(x = job, y = trans_balance, fill = job)) + 
   geom_boxplot(outlier.size = 0.7, na.rm = TRUE) +
   coord_flip() + 
   stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black", na.rm = TRUE) + 
@@ -83,13 +132,13 @@ ggplot(bank_full_loged, aes(x = job, y = trans_balance, fill = job)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 ```
 
-The box plots allow us to conclude that the balance of the client accounts is likely dependent more factors than simply their job. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply Yeo-Johnson transformation to achieve more normal values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
+The box plots allow us to conclude that the balance of the client accounts is likely dependent more factors than simply their job. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply Order-Norm transformation to achieve more normal values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
 
 One angle that could reveal more valuable information is additional (categorical) client characteristics with regard to whether or not the client has subscribed to a bank deposit.
 
 ```{r message=FALSE, warning=FALSE}
 cat_vars <- c("job", "marital", "education", "in_default", "housing_loan", 
-              "personal_loan", "day", "month", "poutcome")
+              "personal_loan", "day", "month")
 
 create_bar_plot <- function(data, var_name) {
   freq_table <- data %>%
@@ -143,4 +192,4 @@ cor(bank_full$duration, bank_full$balance)
 cor(bank_full$duration, bank_full$age)
 ```
 
-The graphs along with Pearson's correlation coefficient indicate that no correlation between call duration and balance/age exists.
+The graphs along with Pearson's correlation coefficient indicate that no correlation between call duration and balance/age exists. This information will come in handy when modeling.
