@@ -12,7 +12,6 @@ date: "`r Sys.Date()`"
 library(caret)
 ```
 
-
 ## Model building
 
 Let's begin by looking at how many clients decided to subscribe we have in our data set.
@@ -20,17 +19,18 @@ Let's begin by looking at how many clients decided to subscribe we have in our d
 ```{r}
 summary(bank_full$subscribed)
 ```
+
 Next, we have to create dummy variables for categorical columns.
 
 ```{r}
-dmy <- dummyVars(" ~ .", data = bank_full[ , names(bank_full) != "subscribed"])
+dmy <- dummyVars(~ age + job + marital + education + balance + contact_type + day + month + campaign + pdays + previous + poutcome + trans_balance, data = bank_full[ , names(bank_full) != "subscribed"])
 
 dummy_data <- data.frame(predict(dmy, newdata = bank_full))
 
-dummy_full <- cbind(dummy_data, subscribed = bank_full$subscribed)
+dummy_data <- dummy_data[, setdiff(colnames(dummy_data), c("contact_type.unknown", "job.unknown", "month.jan", "marital.single", "education.unknown", "poutcome.unknown"))]
 
+dummy_full <- cbind(dummy_data, subscribed = bank_full$subscribed, in_default = bank_full$in_default, housing_loan = bank_full$housing_loan, personal_loan = bank_full$personal_loan)
 ```
-
 
 We can now separate our original data set into two: training and testing.
 
@@ -50,6 +50,7 @@ We'll avoid filling missing variable values for now.
 model1 <- glm(subscribed ~ ., data = train_dummy, family = binomial)
 summary(model1)
 ```
+
 ```{r}
 glm_predict_subs <- predict(model1, test_dummy, type = "response")
 
@@ -57,4 +58,3 @@ roc_curve <- roc(test_dummy$subscribed, glm_predict_subs)
 
 auc(roc_curve)
 ```
-
