@@ -12,9 +12,23 @@ Let's begin by looking at how many clients that decided to subscribe we have in 
 summary(bank_full$subscribed)
 ```
 
+We can now separate our original data set into two: training and testing.
+
+```{r}
+set.seed(167)
+sample_size <- round(0.8 * nrow(bank_full))
+
+train_indices <- sample(seq_len(nrow(bank_full)), size = sample_size)
+
+train_data <- bank_full[train_indices, ]
+test_data  <- bank_full[-train_indices, ]
+```
+
+We'll avoid filling missing variable values for now.
+
 ```{r}
 model1 <- glm(subscribed ~ age + job + marital + education + in_default + balance + housing_loan +
                personal_loan + contact_type + day + month + duration + campaign + pdays +
-               previous, data = bank_full, family = binomial)
+               previous, data = test_data, family = binomial)
 summary(model1)
 ```
