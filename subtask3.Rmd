@@ -6,29 +6,55 @@ date: "`r Sys.Date()`"
 
 *Data from subtask1.rmd (Data Manipulation Task) and subtask2.rmd (Data Visualization Task) must be loaded into the environment.*
 
-Let's begin by looking at how many clients that decided to subscribe we have in our data set.
+## Packages
+
+```{r}
+library(caret)
+```
+
+
+## Model building
+
+Let's begin by looking at how many clients decided to subscribe we have in our data set.
 
 ```{r}
 summary(bank_full$subscribed)
 ```
+Next, we have to create dummy variables for categorical columns.
+
+```{r}
+dmy <- dummyVars(" ~ .", data = bank_full[ , names(bank_full) != "subscribed"])
+
+dummy_data <- data.frame(predict(dmy, newdata = bank_full))
+
+dummy_full <- cbind(dummy_data, subscribed = bank_full$subscribed)
+
+```
+
 
 We can now separate our original data set into two: training and testing.
 
 ```{r}
 set.seed(167)
-sample_size <- round(0.8 * nrow(bank_full))
+sample_size <- round(0.8 * nrow(dummy_full))
 
-train_indices <- sample(seq_len(nrow(bank_full)), size = sample_size)
+train_indices <- sample(seq_len(nrow(dummy_full)), size = sample_size)
 
-train_data <- bank_full[train_indices, ]
-test_data  <- bank_full[-train_indices, ]
+train_dummy <- dummy_full[train_indices, ]
+test_dummy  <- dummy_full[-train_indices, ]
 ```
 
 We'll avoid filling missing variable values for now.
 
 ```{r}
-model1 <- glm(subscribed ~ age + job + marital + education + in_default + balance + housing_loan +
-               personal_loan + contact_type + day + month + duration + campaign + pdays +
-               previous, data = test_data, family = binomial)
+model1 <- glm(subscribed ~ ., data = train_dummy, family = binomial)
 summary(model1)
 ```
+```{r}
+glm_predict_subs <- predict(model1, test_dummy, type = "response")
+
+roc_curve <- roc(test_dummy$subscribed, glm_predict_subs)
+
+auc(roc_curve)
+```
+
