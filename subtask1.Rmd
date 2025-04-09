@@ -29,24 +29,51 @@ head(bank_full)
 tail(bank_full)
 ```
 
-A first look at the data shows us that many of the provided columns have an incorrect data type. For example, default and marital status are set as character data types when they should be factors.
-
 ```{r}
 str(bank_full)
 ```
 
-A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". We have to decide whether to keep them as "unknown" or convert them to NA. As the data given to a logistic regression model cannot have missing entries, "unknown" values will be kept.
+A first look at the data shows us that many of the provided columns have an incorrect data type. For example, default and marital status are set as character data types when they should be factors.
 
 ```{r}
 bank_full <- bank_full %>%
   mutate(job = if_else(job == "admin.", "admin", job)) %>% 
-  mutate(across(c(marital, job, education, contact, poutcome), as.factor)) %>% 
+  mutate(across(c(marital, job, education, contact, poutcome, day), as.factor)) %>% 
   mutate(across(c(default, housing, loan, y), ~ .x == "yes")) %>% 
   mutate(month = factor(month, levels = c("jan", "feb", "mar", "apr", "may", "jun",
-                                          "jul", "aug", "sep", "oct", "nov", "dec")))
+                                          "jul", "aug", "sep", "oct", "nov", "dec")),
+
+         job = relevel(job, ref = "unemployed"),
+         marital = relevel(marital, ref = "single"),
+         education = relevel(education, ref = "unknown"),
+         contact = relevel(contact, ref = "unknown"),
+         poutcome = relevel(poutcome, ref = "unknown"))
 
 str(bank_full)
 ```
+
+We have 45211 rows and 16 columns (excluding y).
+
+A look at the description by the researchers tells us that there are no missing values even though some columns have values "unknown". We have to decide whether to keep them as "unknown" or convert them to NA. Either way, missing values must be inspected.
+
+```{r}
+sum(apply(bank_full == "unknown", 1, any))
+```
+
+There are a total of 37369 rows with at least one "unknown" value.
+
+How many "unknowns" does each column have?
+
+```{r}
+unknown_table <- data.frame(
+  unknown_count = sapply(bank_full, function(col) sum(col == "unknown", na.rm = TRUE))) %>% 
+  arrange(desc(unknown_count)) %>% 
+  filter(unknown_count != 0)
+
+print(unknown_table)
+```
+
+Almost all of the poutcome values are unknown. Let's keep this column for now as we will look at outcome distributions with regard to y values later on.
 
 Lastly, since some columns have names that may be difficult to interpret without looking at the metadata first, we should rename them.
 
@@ -62,8 +89,7 @@ bank_full <- bank_full %>%
 ```{r}
 lapply(bank_full[ , !(names(bank_full) %in% c("age", "balance", "duration", "pdays"))], unique)
 ```
-
-Data is now cleaned, we now may move to the next step.
+## Exploratory analysis
 
 ## Manipulating data
 
@@ -80,8 +106,8 @@ summary(bank_full[, c("age", "job", "marital", "education", "in_default", "housi
 We notice that practically all values in poutcome are set as unknown and therefore won't be useful during modelling. We can remove that column.
 
 ```{r}
-bank_full <- bank_full %>% 
-  select(-poutcome)
+#bank_full <- bank_full %>% 
+#  select(-poutcome)
 ```
 
 Let's choose a data frame with the clients that have a dangerously low balance and have or have had a partner at a point in their life. Due to low numbers in the total population, let's search for them in the full data set.
