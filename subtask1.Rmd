@@ -512,8 +512,6 @@ train_indices <- sample(seq_len(nrow(dummy_full)), size = sample_size)
 
 train_dummy <- dummy_full[train_indices, ]
 test_dummy  <- dummy_full[-train_indices, ]
-
-str(bank_full)
 ```
 
 And finally, we can run the model.
@@ -533,4 +531,35 @@ auc(roc_curve)
 
 Now we remove variables that are not statistically meaningful to the model.
 
+```{r}
+dummy_full_2 <- dummy_full %>%
+  select(-c("job.admin", "job.blue.collar", "job.entrepreneur", "job.management", 
+            "job.retired", "job.self.employed", "job.services", "job.technician", 
+            "marital.divorced", "education.secondary", "day.2", "day.3", "day.4", 
+            "day.5", "day.6", "day.8", "day.9", "day.11", "day.12", "day.14", 
+            "day.15", "day.16", "day.18", "day.20", "day.21", "day.22", "day.24", "day.25", 
+            "day.26", "day.28", "day.29", "day.31", "campaign", "poutcome.failure", 
+            "poutcome.other", "poutcome.success", "in_default", "previous", "balance"))
+
+set.seed(167)
+sample_size <- round(0.8 * nrow(dummy_full_2))
+
+train_indices_2 <- sample(seq_len(nrow(dummy_full_2)), size = sample_size)
+
+train_dummy_2 <- dummy_full_2[train_indices_2, ]
+test_dummy_2  <- dummy_full_2[-train_indices_2, ]
+```
+
+```{r}
+model2 <- glm(subscribed ~ ., data = train_dummy_2, family = binomial)
+summary(model2)
+```
+
+```{r}
+glm_predict_subs <- predict(model2, test_dummy_2, type = "response")
+
+roc_curve <- roc(test_dummy_2$subscribed, glm_predict_subs)
+
+auc(roc_curve)
+```
 
