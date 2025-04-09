@@ -13,6 +13,32 @@ library(DescTools)
 library(gmodels)
 ```
 
+## Pre-defined functions
+
+```{r}
+create_bar_plot <- function(data, var_name) {
+  freq_table <- data %>%
+    group_by(!!sym(var_name), subscribed) %>%
+    summarise(count = n(), .groups = "drop") %>%
+    group_by(!!sym(var_name)) %>%
+    mutate(prop = count / sum(count))
+  
+  p <- ggplot(freq_table, aes(x = !!sym(var_name), y = prop, fill = subscribed)) +
+    geom_bar(stat = "identity", position = "fill") +
+    scale_fill_manual(values = c("TRUE" = "#4CAF50", "FALSE" = "#F44336")) +
+    labs(x = var_name,
+         y = "",
+         fill = "Subscribed") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(size = 10),
+          legend.position = "none")
+  
+  return(p)
+}
+```
+
+
 ## Importing data
 
 ```{r message=FALSE, warning=FALSE}
@@ -103,7 +129,7 @@ ggplot(bank_full, aes(x = age)) +
   geom_bar() + 
   facet_grid(subscribed ~ ., scales = "free_y")
 ```
-The vast majority of clients contacted by the bank were between 26 and 60 years old.
+The vast majority of clients contacted by the bank were between 26 and 60 years old. The variable is not follow the normal distribution.
 
 ```{r}
 bank_full = bank_full %>% 
@@ -119,10 +145,24 @@ Clients of the age 60+ were most likely to subscribe: 42.3% of them chose to do 
 
 The data does not seem to indicate a linear relationship between age and subscription rates. Either way, we will keep a continuous version of the age variable.
 
-## Job
+```{r}
+vars_for_plot <- bank_full %>%
+  select(age, balance, duration, campaign, pdays, previous, subscribed)
+
+bank_long <- vars_for_plot %>%
+  pivot_longer(cols = -subscribed, names_to = "variable", values_to = "value")
+
+ggplot(filter(bank_long, variable == "age"),
+                aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(18, 99)
+```
+The density plots also do not show a large difference in terms of age with the acception being clients over the age of 60.
+
+### Job
 
 ```{r}
-table(bank_full$job)
+summary(bank_full$job)
 ```
 There are a total of 228 unknown values. Due to the large row count we can afford to drop these rows.
 
@@ -133,6 +173,97 @@ bank_full <- bank_full %>% filter(job != "unknown")
 ```{r}
 nrow(bank_full)
 ```
+
+Let's look at what percentage of clients subscribed based on their job.
+
+```{r}
+create_bar_plot(bank_full, "job")
+```
+
+As the chart shows, students, of all jobs, were most likely to subscribe to a deposit with retired workers following second.
+
+### Marital status
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$marital, prop.t = FALSE, prop.chisq = FALSE)
+
+```
+
+Married persons make up 60.1% of out data set. Single clients were slightly more likely to make a subscription (14,9%) than other clients. It is also probable that this tendency is caused by randomness as marital status categories are not divided equally.
+
+```{r}
+create_bar_plot(bank_full, "marital")
+```
+
+### Education
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$education, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+There are "unknown" values in the education variable. If we removed these "unknowns" we would risk causing further imbalance in the subscribed variable as only around 20% of clients decided to make a deposit subscription.
+
+```{r}
+create_bar_plot(bank_full, "education")
+```
+
+
+### Default status
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$in_default, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+Only 6,4% of clients that were in default chose to make a subscription. Out of the total sample only 1,8% clients were in default. This variable is unlike to be a good indicator of wether the client makes a subscription.
+
+```{r}
+create_bar_plot(bank_full, "in_default")
+```
+
+### Balance
+
+```{r message=FALSE, warning=FALSE}
+ggplot(filter(bank_long, variable == "balance"),
+                    aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(-1000, 5500)
+```
+
+The distribution of balance does not immediately indicate that wealthier clients are more likely to make a subscription.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(filter(bank_long, variable == "balance"),
+                    aes(x = value, fill = subscribed)) +
+  geom_boxplot(alpha = 0.5) +
+  xlim(-1000, 5500)
+```
+Since we are dealing with financial data the are many exceptions (outliers) in the distributions of variables. Though the box plots do indicate that the median of balance is higher for those who chose to subscribe.
+
+```{r}
+paste0("Balance Mean: ", mean(bank_full$balance, na.rm = TRUE))
+paste0("Balance Standart Deviation: ", sd(bank_full$balance))
+
+outliers <- boxplot.stats(bank_full$balance)$out
+outlierNum <- length(outliers)
+paste0("Outlier Percentage: ", round(outlierNum/(length(bank_full$balance)) * 100, 2))
+
+```
+
+Since the balance variance is relatively high (3035) and 10.49% of the entries can be marked as outliers, we'll normalize the balance variable using the Order-Norm transformation (maps each data point to a percentile in a normal distribution based on the percentile value in the original distribution).
+
+```{r warning=FALSE}
+on <- orderNorm(bank_full$balance)
+bank_full$trans_balance <- predict(on)
+
+ggplot(bank_full, aes(x = job, y = trans_balance, fill = job)) + 
+  geom_boxplot(outlier.size = 0.7, na.rm = TRUE) +
+  coord_flip() + 
+  stat_summary(fun = mean, geom = "point", shape = 4, size = 0.8, color = "black", na.rm = TRUE) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+The box plots allow us to conclude that the balance of the client accounts is likely dependent more factors than simply their job. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply Order-Norm transformation to achieve more normal values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
+
 
 
 ## Manipulating data
