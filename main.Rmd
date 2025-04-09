@@ -605,3 +605,8 @@ confusionMatrix(
 ```
 
 By lowering the threshold down to 0.2, true positives are being recognized with 65,8% accuracy and the specificity is only lowered to 90,5%.
+
+## Conclusion
+
+1.  The logistic regression model accuracy score is 0,8777 (with threshold adjusted). True positive rate is 0,65813.
+2.  Most important parameters for choosing a potential bank deposit subscriber are call duration, contact type, day and month of contact and whether or not the client has borrowed a loan.
