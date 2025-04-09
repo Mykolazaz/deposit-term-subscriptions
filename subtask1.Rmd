@@ -1,5 +1,5 @@
 ---
-title: "Data Manipulation Task"
+title: "Task"
 output: pdf_document
 date: "`r Sys.Date()`"
 ---
@@ -11,6 +11,14 @@ library(readr)
 library(dplyr)
 library(DescTools)
 library(gmodels)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+library(tidyr)
+library(patchwork)
+library(bestNormalize)
+library(caret)
+library(pROC)
 ```
 
 ## Pre-defined functions
@@ -399,16 +407,6 @@ set.seed(167)
 smallBank <- sample_n(bank_full, 400, replace = FALSE)
 ```
 
-```{r}
-summary(bank_full[, c("age", "job", "marital", "education", "in_default", "housing_loan", "personal_loan", "poutcome")])
-```
-We notice that practically all values in poutcome are set as unknown and therefore won't be useful during modelling. We can remove that column.
-
-```{r}
-#bank_full <- bank_full %>% 
-#  select(-poutcome)
-```
-
 Let's choose a data frame with the clients that have a dangerously low balance and have or have had a partner at a point in their life. Due to low numbers in the total population, let's search for them in the full data set.
 
 ```{r}
@@ -489,14 +487,45 @@ summary(bank_full_potencial$potential_client)
 
 We can see that to 5227 "potential" clients the marketing campaign hasn't been effective.
 
-We can also take a look at the contacted clients with the highest balance by job type.
+
+## Modelling
+
+Next, we have to create dummy variables for categorical columns.
 
 ```{r}
-max_balance_job <- bank_full %>% 
-  group_by(job) %>% 
-  summarise(max_balance = max(balance))
+dmy <- dummyVars(~ age + age_categ + job + marital + education + balance + contact_type + day + month + campaign + pdays + previous + poutcome + duration, data = bank_full[ , names(bank_full) != "subscribed"])
 
-print(max_balance_job)
+dummy_data <- data.frame(predict(dmy, newdata = bank_full))
+
+dummy_data <- dummy_data[, setdiff(colnames(dummy_data), c("contact_type.unknown", "job.unemployed", "month.jan", "marital.single", "education.unknown", "poutcome.unknown", "day.1"))]
+
+dummy_full <- cbind(dummy_data, subscribed = bank_full$subscribed, in_default = bank_full$in_default, housing_loan = bank_full$housing_loan, personal_loan = bank_full$personal_loan)
 ```
 
-The client with the highest balance has a job in management.
+We can now separate our original data set into two: training and testing.
+
+```{r}
+set.seed(167)
+sample_size <- round(0.8 * nrow(dummy_full))
+
+train_indices <- sample(seq_len(nrow(dummy_full)), size = sample_size)
+
+train_dummy <- dummy_full[train_indices, ]
+test_dummy  <- dummy_full[-train_indices, ]
+```
+
+And finally, we can run the model.
+
+```{r}
+model1 <- glm(subscribed ~ ., data = train_dummy, family = binomial)
+summary(model1)
+```
+
+```{r}
+glm_predict_subs <- predict(model1, test_dummy, type = "response")
+
+roc_curve <- roc(test_dummy$subscribed, glm_predict_subs)
+
+auc(roc_curve)
+```
+
