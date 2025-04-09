@@ -122,6 +122,14 @@ Looking at the unique columns values we do not see anything out of the ordinary.
 
 Now we can look at each variable separately.
 
+### Subscribed
+
+```{r}
+table(bank_full$subscribed)
+```
+
+We have a large imbalance in out data. Only 11,6% of contacted clients subscribed. We must also take this into account when removing unknown values.
+
 ### Age
 
 ```{r}
@@ -314,6 +322,73 @@ ggplot(filter(bank_long, variable == "duration"),
   xlim(0, 1600)
 ```
 Call duration seems to tell a clearer story than other continuous variables. Clients that, in the end, decided not to subscribe had shorter conversations with the representative of the bank showing their disinterest early on.
+
+### Atributes related to previous contact
+
+#### Campaign contacts
+
+```{r message=FALSE, warning=FALSE}
+ggplot(bank_full, aes(x = campaign)) +
+  geom_bar() + 
+  facet_grid(subscribed ~ ., scales = "free_y") +
+  xlim(0, 25)
+```
+Number of contacts performed during this campaign seems to be proportional with the number of contacts performed in total.
+
+Let's took how the number of total calls is related to calls that lead to a subscription. 
+
+```{r}
+CrossTable(bank_full$subscribed[bank_full$campaign < 5], bank_full$campaign[bank_full$campaign < 5],
+           prop.t = FALSE, prop.chisq = FALSE)
+```
+Number of contacts during the campaign seems to increase the likeliness of subscription but with linearly diminishing returns.
+
+#### Previous days
+
+```{r}
+sum(bank_full$pdays != -1)
+```
+There are 8224 clients which have been contacted in the past. Since there are many different pdays values and since the variable has been encoded as -1 or any other natural number, in order to avoid singularities in our logistic regression model, we can transform this variable in to a binary variable.
+
+```{r}
+bank_full <- bank_full %>%
+  mutate(was_contacted = ifelse(pdays == -1, FALSE, TRUE))
+```
+
+#### Previous contacts
+
+```{r message=FALSE, warning=FALSE}
+ggplot(bank_full, aes(x = previous)) +
+  geom_bar() + 
+  facet_grid(subscribed ~ ., scales = "free_y") + 
+  xlim(-1, 50)
+```
+
+```{r}
+CrossTable(bank_full$subscribed[bank_full$previous < 4], bank_full$previous[bank_full$previous < 4],
+           prop.t = FALSE, prop.chisq = FALSE)
+```
+Number of contacts during the previous campaign seems to linearly increase the likeliness of subscription.
+
+#### Previous outcome
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$poutcome, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+If the outcome of the previous campaign was successful, the outcome of the current campaign on the same client has a 64,6% likelihood of being successful. Although it must be noted that there are only 1500 clients with the poutcome attribute set as successful.
+
+```{r}
+create_bar_plot(bank_full, "poutcome")
+```
+
+### Corelation of continuous variables
+
+```{r}
+corr_matrix <- cor(bank_full[, c("age", "balance", "duration")], use = "complete.obs")
+print(corr_matrix)
+```
+As the continuous variables are not correlated with each other, we can negate multicollinearity concerns for the logistic regression model.
 
 ## Manipulating data
 
