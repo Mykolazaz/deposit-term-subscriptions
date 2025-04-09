@@ -129,7 +129,7 @@ Looking at the unique columns values we do not see anything out of the ordinary.
 
 ## Exploratory analysis
 
-Now we can look at each variable separately.
+Now we can investigate each variable separately.
 
 ### Subscribed
 
@@ -201,7 +201,7 @@ Let's look at what percentage of clients subscribed based on their job.
 create_bar_plot(bank_full, "job")
 ```
 
-As the chart shows, students, of all jobs, were most likely to subscribe to a deposit (above 25%) with retired workers following second (around 25%).
+As the chart shows, students, of all jobs, were most likely to subscribe to a deposit (28,7%) with retired workers following second at 22,8%.
 
 ### Marital status
 
@@ -210,7 +210,7 @@ CrossTable(bank_full$subscribed, bank_full$marital, prop.t = FALSE, prop.chisq =
 
 ```
 
-Married clients make up 60,1% of out data set. Single clients were slightly more likely to make a subscription (14,9%) than other clients. It is also probable that this tendency is caused by randomness as marital status categories are not divided equally (single - 28.3%, divorced - 11,6% and married - 60,1%).
+Married clients make up 60,1% of out data set. Single clients were slightly more likely to make a subscription (14,9%) than other clients. It is also probable that this tendency is caused by randomness as marital status categories are not divided equally (single - 28,3%, divorced - 11,6% and married - 60,1%).
 
 ```{r}
 create_bar_plot(bank_full, "marital")
@@ -260,7 +260,7 @@ ggplot(filter(bank_long, variable == "balance"),
   xlim(-1000, 5500)
 ```
 
-Since we are dealing with financial data the are many exceptions (outliers) in the distributions of variables. Though the box plots do indicate that the median balance is higher for those who chose to subscribe.
+Since we are dealing with financial data, there are many exceptions (outliers) in the distributions of variables. Though the box plots do indicate that the median balance is higher for those who chose to subscribe.
 
 ```{r}
 paste0("Balance Mean: ", mean(bank_full$balance, na.rm = TRUE))
@@ -299,7 +299,7 @@ CrossTable(bank_full$subscribed, bank_full$housing_loan, prop.t = FALSE, prop.ch
 CrossTable(bank_full$subscribed, bank_full$personal_loan, prop.t = FALSE, prop.chisq = FALSE)
 ```
 
-The situation is practically the same with personal loans accept here only 16,1% of the clients had a personal loan. Clients that did not have a personal loan were 1,9 times as likely to subscribe than the clients without one.
+The situation here is practically the same as with housing loans accept the fact that only 16,1% of the clients had a personal loan. Clients that did not have a personal loan were 1,9 times as likely to subscribe than the clients without one.
 
 ```{r}
 plot_list <- lapply(c("housing_loan", "personal_loan"), function(var) create_bar_plot(bank_full, var))
@@ -604,7 +604,7 @@ confusionMatrix(
 )
 ```
 
-By lowering the threshold down to 0.2, true positives are being recognized with 65,8% accuracy and the specificity is only lowered to 90,5%.
+By lowering the threshold down to 0.2, true positives are being recognized with 65,8% accuracy (up from 29,1%) and the specificity is only lowered to 90,5% (from 97,4%).
 
 ## Conclusion
 
