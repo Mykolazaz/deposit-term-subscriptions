@@ -21,7 +21,7 @@ library(caret)
 library(pROC)
 ```
 
-## Pre-defined functions
+## Predefined functions
 
 ```{r}
 create_bar_plot <- function(data, var_name) {
