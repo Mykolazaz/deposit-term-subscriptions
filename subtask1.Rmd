@@ -10,6 +10,7 @@ date: "`r Sys.Date()`"
 library(readr)
 library(dplyr)
 library(DescTools)
+library(gmodels)
 ```
 
 ## Importing data
@@ -89,7 +90,50 @@ bank_full <- bank_full %>%
 ```{r}
 lapply(bank_full[ , !(names(bank_full) %in% c("age", "balance", "duration", "pdays"))], unique)
 ```
+Looking at the unique columns values we do not see anything out of the ordinary.
+
 ## Exploratory analysis
+
+Now we can look at each variable separately.
+
+### Age
+
+```{r}
+ggplot(bank_full, aes(x = age)) +
+  geom_bar() + 
+  facet_grid(subscribed ~ ., scales = "free_y")
+```
+The vast majority of clients contacted by the bank were between 26 and 60 years old.
+
+```{r}
+bank_full = bank_full %>% 
+  mutate(age_categ = case_when(
+    age > 60 ~ "high",
+    age > 26 ~ "mid",
+    TRUE ~ "low"
+  ))
+
+CrossTable(bank_full$subscribed, bank_full$age_categ, prop.t = FALSE, prop.chisq = FALSE)
+```
+Clients of the age 60+ were most likely to subscribe: 42.3% of them chose to do so. That is the highest percentage of all age groups even though older clients make up the smallest part of the total population.
+
+The data does not seem to indicate a linear relationship between age and subscription rates. Either way, we will keep a continuous version of the age variable.
+
+## Job
+
+```{r}
+table(bank_full$job)
+```
+There are a total of 228 unknown values. Due to the large row count we can afford to drop these rows.
+
+```{r}
+bank_full <- bank_full %>% filter(job != "unknown")
+```
+
+```{r}
+nrow(bank_full)
+```
+
 
 ## Manipulating data
 
