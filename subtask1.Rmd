@@ -201,7 +201,7 @@ create_bar_plot(bank_full, "marital")
 CrossTable(bank_full$subscribed, bank_full$education, prop.t = FALSE, prop.chisq = FALSE)
 ```
 
-There are "unknown" values in the education variable. If we removed these "unknowns" we would risk causing further imbalance in the subscribed variable as only around 20% of clients decided to make a deposit subscription.
+There are "unknown" values in the education variable. If we removed these "unknowns" we would risk causing further imbalance in the subscribed variable as only around 20% of clients decided to make a deposit subscription. It is most probable that clients with a tertiary education will subscribe.
 
 ```{r}
 create_bar_plot(bank_full, "education")
@@ -264,7 +264,56 @@ ggplot(bank_full, aes(x = job, y = trans_balance, fill = job)) +
 
 The box plots allow us to conclude that the balance of the client accounts is likely dependent more factors than simply their job. It also indicates that the clients grouped by their job type are not homogeneous (as we had to apply Order-Norm transformation to achieve more normal values). Nevertheless we can draw certain conclusions. For example, we can see that the median account balance of students is higher than those of service workers. Another trend is clear - retirees have the highest average and median balance.
 
+### Housing and Personal loans
 
+```{r}
+CrossTable(bank_full$subscribed, bank_full$housing_loan, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+55,9% of the clients in out sample had a housing loan. Clients that did not have a housing loan were more twice as likely to subscribe than the clients without one. It is clear that this variable will be significant when modelling.
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$personal_loan, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+The situation is practically the same with personal loans accept here only 16,1% of the clients had a personal loan. Clients that did not have a personal loan were twice as likely to subscribe than the clients without one. It is clear that this variable will also be significant when modelling as clients with no financial burdens (defaults and loans) are more likely to subscribe.
+
+```{r}
+plot_list <- lapply(c("housing_loan", "personal_loan"), function(var) create_bar_plot(bank_full, var))
+
+bar_plot_matrix <- grid.arrange(grobs = plot_list, ncol = 2)
+```
+
+### Contact type
+
+```{r}
+CrossTable(bank_full$subscribed, bank_full$contact_type, prop.t = FALSE, prop.chisq = FALSE)
+```
+
+Clients that were contacted through a cellular phone were slightly more likely to make a subscription. The contact type for 28,7% of the clients is unknown.
+
+```{r}
+create_bar_plot(bank_full, "contact_type")
+```
+
+### Day and month
+
+```{r}
+plot_list_2 <- lapply(c("day", "month"), function(var) create_bar_plot(bank_full, var))
+
+bar_plot_matrix_2 <- grid.arrange(grobs = plot_list_2, ncol = 2)
+```
+March, September, October and December were the best months to contact the clients. Higher success could also be achieved when contacting the clients on the 1st, 10th, 22nd and 30th. These insights should be tested when modelling.
+
+### Duration
+
+```{r message=FALSE, warning=FALSE}
+ggplot(filter(bank_long, variable == "duration"),
+                     aes(x = value, fill = subscribed)) +
+  geom_density(alpha = 0.5) +
+  xlim(0, 1600)
+```
+Call duration seems to tell a clearer story than other continuous variables. Clients that, in the end, decided not to subscribe had shorter conversations with the representative of the bank showing their disinterest early on.
 
 ## Manipulating data
 
